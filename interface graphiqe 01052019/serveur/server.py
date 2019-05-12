@@ -78,7 +78,7 @@ class ClientThread(threading.Thread):
             """
             # On recup la list qui contient l'instruction
 
-            data = client.recv(2**30)
+            data = client.recv(2**15)
             data = pickle.loads(data)
 
             if data[0] == "download": # Si l'instruction est "Download"
@@ -120,6 +120,7 @@ class ClientThread(threading.Thread):
                     with open("log.json", "w", encoding="utf-8") as f:
                         json.dump(logs, f, ensure_ascii=False)
                         f.close()
+					print("ok acc")
                 else:
                     print("Opération refusée")
 

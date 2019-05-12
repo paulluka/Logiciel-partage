@@ -12,12 +12,12 @@ import socket, os, subprocess, pickle, codecs
 
 def download_ig():
 	"""
-		Décrir fonction
+		Affiche la commande pour telecharger un fichier lorsque l'utilisateur selectionne download
 	"""
 	#Afiichage des labels a la demande du client
 	global entry_folder_download, entry_filename_download, label_download #globaliser les variables qu'on utilise a l'exterieur de la fonction
 	label_download = Label(frame_choix, text = "Veuillez écrire le nom du fichier que vous voulez télécharger et son dossier: ", bg = 'pink', fg = 'black', font = 15)
-	label_download.place(relx = 0.16 , rely = 0.34, relwidth= 0.72, relheight = 0.2)
+	label_download.place(relx = 0.16 , rely = 0.34, relwidth= 0.72, relheight = 0.1)
 	
 	# Rentrer le nom du dossier désiré
 	entry_filename_download = Entry(frame_choix)
@@ -33,12 +33,12 @@ def download_ig():
 
 def upload_ig():
 	"""
-		Décrir fonction
+		Affiche la commande pour telecharger un fichier lorsque l'utilisateur selectionne upload
 	"""
 	#Affichage des labels a la demande du client
 	global entry_folder_upload, label_upload #globaliser les variables qu'on utilise a l'exterieur de la fonction
 	label_upload = Label(frame_choix, text = "Veuillez écrire le nom du dossier dans lequel vous voulez insérer : ", bg = 'pink', fg = 'black', font = 15)
-	label_upload.place(relx = 0.16 , rely = 0.34, relwidth= 0.7, relheight = 0.2)
+	label_upload.place(relx = 0.16 , rely = 0.34, relwidth= 0.7, relheight = 0.1)
 	# Rentrer le dossier cible
 	entry_folder_upload = Entry(frame_choix)
 	entry_folder_upload.place(relx = 0.36 , rely = 0.5, relwidth= 0.3, relheight = 0.09)
@@ -46,9 +46,30 @@ def upload_ig():
 	Button_Valider_upload = Button(frame_choix, text = "Valider", command = upload)
 	Button_Valider_upload.place(relx = 0.36 , rely = 0.6, relwidth= 0.3, relheight = 0.09)
 
+	
+def account_ig():
+	"""
+		Crée un nouveau compte
+	"""
+	global New_Password, New_Username
+	label_account = Label(frame_choix, text = "Nouveau nom d'utilisateur et mot de passe : ", bg = 'pink', fg = 'black', font = 15)
+	label_account.place(relx = 0.16 , rely = 0.34, relwidth= 0.3, relheight = 0.1)
+	
+	
+	New_Username = Entry(frame_choix)
+	New_Username.place(relx = 0.25 , rely = 0.5, relwidth= 0.3, relheight = 0.09)
+	
+	New_Password = Entry(frame_choix)
+	New_Password.place(relx = 0.50 , rely = 0.5, relwidth= 0.3, relheight = 0.09)
+	
+	Button_Valider_account = Button(frame_choix, text = "Valider", command = add_acc)
+	Button_Valider_account.place(relx = 0.36 , rely = 0.6, relwidth= 0.3, relheight = 0.09)
+	
+	
 def deconnexion_ig():
 	"""
-		Décrir fonction
+		Affiche un msg lorsque le client se deconnecte puis ferme le logiciel
+
 	"""
 	#message deco client
 	showinfo("Déconnexion", "Vous avez été déconnectés avec succès !")
@@ -82,13 +103,13 @@ def get_arbo():
 	output_str = data[0].decode("utf-8", errors='replace_with_space')
 	return output_str
 
+
 def auth():
 	"""
 		Envoie des identifiants et recup de la reponse
 		renvoie un booléen pour savoir si on continue ou non
 	"""
-
-	global server, connectivity,echec_connection
+	global server , username
 
 	username = get_username()
 	password = get_password()
@@ -101,8 +122,7 @@ def auth():
 	log_state = server.recv(2048)
 	log_state = pickle.loads(log_state)
 
-	if log_state[0] == "Success": # La liste contient le mot clef "Success" -> on est auth.
-		# On récup l'arbo
+	if log_state[0] == "Success": # La liste contient le mot clef "Success" -> on est auth.	
 		frame_deux()
 	elif log_state[0] == "Fail": # La liste contient le mot clef "Fail" -> on est pas auth.
 		showinfo("Indication", "Le serveur indique : {}".format(log_state[1]))
@@ -155,6 +175,20 @@ def upload():
 		label_upload.config(text='Fichier envoyé avec succès')
 	except:
 		showinfo("Envoie", "Le fichier n'éxiste pas ou ne peut pas etre ouvert .")
+		
+def add_acc():
+	""" Creer un compte """
+	global server
+
+	new_username = New_Username.get()
+	new_password = New_Password.get()
+	print(new_password, new_username)
+	data = ["add_acc", new_username, new_password]
+	data = pickle.dumps(data)
+	server.send(data)
+	showinfo("Envoie", "Le fichier n'éxiste pas ou ne peut pas etre ouvert .")
+
+	
 
 
 
@@ -175,14 +209,23 @@ def get_filename():
 def get_folder_download():
 	return entry_folder_download.get()
 
-#En cas d'erreur, détruire toute les fenetres
 
-		
 def afficher_arbo():
 	arbo = get_arbo()
 	arbo_window = Tk()
-	label_arbo = Label(arbo_window, text=arbo).grid(row=0, column=0)
+
+
+	scrollbar = Scrollbar(arbo_window, orient=VERTICAL)
+	scrollbar.grid(row=0, column=1, sticky=N+S)
+	afficher_arbo = Text(arbo_window, yscrollcommand=scrollbar.set)
+	afficher_arbo.insert(END, arbo)
+	afficher_arbo.config(state = "disabled")
+	afficher_arbo.grid(row=0, column=0)
+	scrollbar.config(command=afficher_arbo.yview)
+
+
 	arbo_window.mainloop()
+
 
 def get_upload_path():
 	path = askopenfilename()
@@ -197,22 +240,20 @@ if __name__ == "__main__":
 	server = connection("localhost", 9999)
 
 	#################################### Interface graphique ############################################
-	HEIGHT = 600
-	WIDTH = 800
+	#HEIGHT = 1000
+	#WIDTH = 1000
 
 	root = Tk()
+	root.title('PyTransfert')
 	#taille fenetre
-	canvas = Canvas(root, height = HEIGHT, width = WIDTH )
+	#canvas = Canvas(root, height = HEIGHT, width = WIDTH )
+	root.attributes('-fullscreen', 1) # Permet de mettre la fenetre sur l'ecran entier en s'adaptant aux dimensions de chaque ecran 
+	#canvas.pack()
 
-	canvas.pack()
+	button_quit_first = Button(text = 'Fermer le logiciel', command = root.destroy)
+	button_quit_first.grid( row = 5 , column = 3)
 
-	############################ fond ###############################
-
-	#background_image = PhotoImage(file='logo_6.png')
-	#backgroung_label = Label(root, image=background_image)
-	#backgroung_label.place(relwidth = 1 , relheight = 1)
-
-	########################### Frame #######################################
+	
 
 	#Frame permet de créer des frames a l'interieur d'une fenetre
 	Framefirst = Frame(root, bg = 'pink', bd = 5)
@@ -229,7 +270,7 @@ if __name__ == "__main__":
 	MDPlab = Label(Framefirst, text= 'Mot de passe', bg='pink' ,fg = 'black')
 	MDPlab.place(relx = 0.4, rely = 0.1 , relwidth= 0.2, relheight = 0.4)
 
-	MDPEntry = Entry(Framefirst)
+	MDPEntry = Entry(Framefirst, show='*')
 	MDPEntry.place(relx = 0.355, rely = 0.5 , relwidth= 0.3, relheight = 0.3)
 
 	#Bouton entrer
@@ -244,12 +285,12 @@ if __name__ == "__main__":
 		global frame_choix
 		frame_choix = Frame(root, bg = 'pink', bd = 6 )
 		frame_choix.place(relx = 0.5 , rely = 0.255, relwidth= 0.75, relheight = 0.7 , anchor='n')
-
+		# Griser le boutton de connéxion
+		Button_connexion.config(state="disabled")
 		#Demande l'option au client 
 
 		Option = Label(frame_choix, text = "Choisissez l'option désirée :",bg = 'pink', fg = 'black', font = 20)
 		Option.place(relx = 0.3, rely = 0, relwidth = 0.4, relheight = 0.1)
-		
 		# Menu
 		menubar = Menu(root)
 		menubar.add_command(label="Arbo", command=afficher_arbo)
@@ -261,6 +302,12 @@ if __name__ == "__main__":
 
 		UploadFill = Button(frame_choix, text = 'Upload', command = upload_ig)
 		UploadFill.place(relx = 0.5 , rely = 0.2, relwidth= 0.2, relheight = 0.1)
+		
+		#Ajouter un compte si on est admin
+		if username == "Admin":
+			Add_account = Button(frame_choix, text = 'Nv Compte', command = account_ig)
+			Add_account.place(relx = 0.4 , rely = 0.3, relwidth= 0.2, relheight = 0.1)
+			
 
 		# Bouton pour deconnexion
 
